@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   const attendance = Object.fromEntries(Object.entries((data.attendance ?? {}) as Record<string, unknown>)
     .filter(([key, value]) => /^[a-z0-9-]+-[0-4]$/.test(key) && typeof value === "string" && validStatuses.has(value)));
   const people = Array.isArray(data.people) && data.people.length === 5
-    ? data.people.map((count) => Math.max(1, Math.min(20, Number(count) || 1)))
+    ? data.people.map((count) => Math.max(1, Math.min(4, Number(count) || 1)))
     : [1, 1, 1, 1, 1];
   const menus = Object.fromEntries(Object.entries((data.menus ?? {}) as Record<string, unknown>)
     .filter(([key, value]) => /^[a-z0-9-]+$/.test(key) && typeof value === "string" && value.trim())
