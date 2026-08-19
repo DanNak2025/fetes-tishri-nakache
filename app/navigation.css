@@ -1,0 +1,10 @@
+.mobile-nav { display:none; }
+@media(max-width:700px) {
+  .mobile-nav { position:fixed; z-index:20; right:10px; bottom:10px; left:10px; display:grid; grid-template-columns:repeat(4,1fr); padding:6px 4px max(6px,env(safe-area-inset-bottom)); border:1px solid rgba(213,223,237,.95); border-radius:19px; background:rgba(255,255,255,.93); box-shadow:0 10px 30px rgba(33,55,87,.2); backdrop-filter:blur(14px); }
+  .mobile-nav button { display:flex; align-items:center; flex-direction:column; justify-content:center; gap:3px; min-height:49px; border:0; border-radius:13px; color:#52637d; background:transparent; cursor:pointer; font:700 10px Arial,Helvetica,sans-serif; line-height:1.1; }
+  .mobile-nav button:active { color:#fff; background:#315a91; transform:scale(.95); }
+  .mobile-nav b { color:#315a91; font-size:16px; line-height:1; }
+  .mobile-nav button:active b { color:#fff; }
+  main { padding-bottom:132px; }
+  .names,.summary,.planner,.meal-summary { scroll-margin-top:14px; }
+}

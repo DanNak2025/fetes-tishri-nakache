@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./dynamic.css";
 import "./mobile.css";
+import "./navigation.css";
 
 export const metadata: Metadata = {
   title: "Planning des fêtes · 2026",
