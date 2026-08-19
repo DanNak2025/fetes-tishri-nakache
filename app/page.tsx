@@ -3,75 +3,54 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Status = "yes" | "no" | "maybe";
+type Lang = "fr" | "he";
 type Planning = { names: string[]; people: number[]; menus: Record<string, string>; attendance: Record<string, Status> };
 
-const events = [
-  { id: "rh-vendredi", name: "Roch Hachana · Vendredi soir", date: "Vendredi 11 septembre 2026" },
-  { id: "rh-samedi-midi", name: "Roch Hachana · Samedi après-midi", date: "Samedi 12 septembre 2026" },
-  { id: "rh-samedi-soir", name: "Roch Hachana · Samedi soir", date: "Samedi 12 septembre 2026" },
-  { id: "rh-dimanche", name: "Roch Hachana · Dimanche après-midi", date: "Dimanche 13 septembre 2026" },
-  { id: "kippour-veille", name: "Kippour · Dimanche soir", date: "Dimanche 20 septembre 2026" },
-  { id: "kippour-fin", name: "Kippour · Casser le jeûne", date: "Lundi 21 septembre 2026 · soir" },
-  { id: "sukkot-vendredi", name: "Souccot · Vendredi soir", date: "Vendredi 25 septembre 2026" },
-  { id: "sukkot-samedi", name: "Souccot · Samedi après-midi", date: "Samedi 26 septembre 2026" },
-  { id: "simha-vendredi", name: "Simha Torah", date: "Vendredi 2 octobre 2026" },
-  { id: "simha-samedi", name: "Simha Torah", date: "Samedi 3 octobre 2026" },
-];
-const defaultPlanning: Planning = { names: ["Personne 1", "Personne 2", "Personne 3", "Personne 4", "Personne 5"], people: [1, 1, 1, 1, 1], menus: {}, attendance: {} };
-const statuses: { key: Status; label: string; icon: string }[] = [
-  { key: "yes", label: "Je viens", icon: "✓" },
-  { key: "maybe", label: "Pas sûr", icon: "?" },
-  { key: "no", label: "Je ne viens pas", icon: "–" },
-];
+const eventIds = ["rh-vendredi", "rh-samedi-midi", "rh-samedi-soir", "rh-dimanche", "kippour-veille", "kippour-fin", "sukkot-vendredi", "sukkot-samedi", "simha-vendredi", "simha-samedi"];
+const eventCopy = {
+  fr: [
+    ["Roch Hachana · Vendredi soir", "Vendredi 11 septembre 2026"], ["Roch Hachana · Samedi après-midi", "Samedi 12 septembre 2026"], ["Roch Hachana · Samedi soir", "Samedi 12 septembre 2026"], ["Roch Hachana · Dimanche après-midi", "Dimanche 13 septembre 2026"], ["Kippour · Dimanche soir", "Dimanche 20 septembre 2026"], ["Kippour · Casser le jeûne", "Lundi 21 septembre 2026 · soir"], ["Souccot · Vendredi soir", "Vendredi 25 septembre 2026"], ["Souccot · Samedi après-midi", "Samedi 26 septembre 2026"], ["Simha Torah", "Vendredi 2 octobre 2026"], ["Simha Torah", "Samedi 3 octobre 2026"],
+  ],
+  he: [
+    ["ראש השנה · ליל שבת", "יום שישי, 11 בספטמבר 2026"], ["ראש השנה · שבת אחר הצהריים", "שבת, 12 בספטמבר 2026"], ["ראש השנה · מוצאי שבת", "שבת, 12 בספטמבר 2026"], ["ראש השנה · יום ראשון אחר הצהריים", "יום ראשון, 13 בספטמבר 2026"], ["יום כיפור · ערב", "יום ראשון, 20 בספטמבר 2026"], ["יום כיפור · שבירת הצום", "יום שני, 21 בספטמבר 2026 · ערב"], ["סוכות · ליל שבת", "יום שישי, 25 בספטמבר 2026"], ["סוכות · שבת אחר הצהריים", "שבת, 26 בספטמבר 2026"], ["שמחת תורה", "יום שישי, 2 באוקטובר 2026"], ["שמחת תורה", "שבת, 3 באוקטובר 2026"],
+  ],
+} as const;
+const text = {
+  fr: { eyebrow:"Tichri 5787 · 2026", title:"Qui vient aux fêtes ?", subtitle:"Le planning familial partagé, pour se retrouver tous ensemble.", presence:"présence", sync:"synchronisé", loading:"chargement…", saving:"enregistrement…", reminder:"↗ Rappeler sur WhatsApp", progress:"répondu", family:"La famille", familyHint:"Écrivez les prénoms et le nombre de personnes de chaque famille.", people:"Personnes", summary:"Récapitulatif", summaryHint:"Les réponses manquantes apparaissent ici.", familyHead:"Famille", coming:"Présent", waiting:"Pas encore répondu", pending:"en attente", all:"Tout répondu", planning:"Le planning", planningHint:"Chaque personne choisit sa réponse. Les changements sont visibles par tous.", answers:"réponses", yes:"Je viens", maybe:"Pas sûr", no:"Je ne viens pas", menu:"🍽 Menu du repas", menuPlaceholder:"Écrire le menu…", person:"personne", persons:"personnes", families:"famille", mealSummary:"Récapitulatif par repas", mealSummaryHint:"Les familles qui ont confirmé leur présence.", noGuests:"Pas encore de présence confirmée", total:"au total", shared:"Les réponses sont partagées avec toutes les personnes qui ont le lien.", personPlaceholder:"Personne", whatsapp:"Coucou ! Petit rappel : peux-tu répondre au planning des fêtes ? 😊\n" },
+  he: { eyebrow:"תשרי תשפ״ז · 2026", title:"מי מגיע לחגים?", subtitle:"לוח משפחתי משותף, כדי שנוכל להיפגש כולנו יחד.", presence:"הגעות", sync:"מסונכרן", loading:"טוען…", saving:"שומר…", reminder:"↗ תזכורת ב-WhatsApp", progress:"ענו", family:"המשפחה", familyHint:"כתבו את השמות ואת מספר האנשים בכל משפחה.", people:"אנשים", summary:"סיכום", summaryHint:"התשובות החסרות מופיעות כאן.", familyHead:"משפחה", coming:"מגיעים", waiting:"טרם ענו", pending:"ממתינים", all:"הכל נענה", planning:"הלוח", planningHint:"כל אחד בוחר תשובה. השינויים גלויים לכולם.", answers:"תשובות", yes:"אני מגיע/ה", maybe:"לא בטוח/ה", no:"לא מגיע/ה", menu:"🍽 תפריט הארוחה", menuPlaceholder:"לכתוב את התפריט…", person:"אדם", persons:"אנשים", families:"משפחות", mealSummary:"סיכום לפי ארוחה", mealSummaryHint:"המשפחות שאישרו את הגעתן.", noGuests:"עדיין אין הגעה מאושרת", total:"בסך הכול", shared:"התשובות משותפות לכל מי שיש לו את הקישור.", personPlaceholder:"אדם", whatsapp:"היי! תזכורת קטנה: אפשר לענות על לוח החגים? 😊\n" },
+} as const;
+const defaultPlanning: Planning = { names:["Personne 1","Personne 2","Personne 3","Personne 4","Personne 5"], people:[1,1,1,1,1], menus:{}, attendance:{} };
 
 export default function Home() {
   const [planning, setPlanning] = useState<Planning>(defaultPlanning);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [lang, setLang] = useState<Lang>("fr");
+  const t = text[lang];
+  const events = eventIds.map((id, index) => ({ id, name:eventCopy[lang][index][0], date:eventCopy[lang][index][1] }));
+  const statuses: { key: Status; label: string; icon: string }[] = [{key:"yes",label:t.yes,icon:"✓"},{key:"maybe",label:t.maybe,icon:"?"},{key:"no",label:t.no,icon:"–"}];
 
-  const loadPlanning = useCallback(async () => {
-    const response = await fetch("/api/planning", { cache: "no-store" });
-    if (!response.ok) throw new Error("Impossible de charger le planning");
-    const data = await response.json() as Planning;
-    setPlanning(data);
-  }, []);
+  const loadPlanning = useCallback(async () => { const response = await fetch("/api/planning", {cache:"no-store"}); if (!response.ok) throw new Error("Load error"); setPlanning(await response.json() as Planning); }, []);
+  useEffect(() => { const saved = window.localStorage.getItem("planning-language"); if (saved === "he" || saved === "fr") setLang(saved); loadPlanning().catch(() => undefined).finally(() => setLoaded(true)); const timer=window.setInterval(() => loadPlanning().catch(() => undefined),8000); return () => window.clearInterval(timer); }, [loadPlanning]);
+  const changeLanguage = (next:Lang) => { setLang(next); window.localStorage.setItem("planning-language", next); };
+  const savePlanning = async (next:Planning) => { setPlanning(next); setSaving(true); try { await fetch("/api/planning", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(next)}); } finally { setSaving(false); } };
+  const comingCount = useMemo(() => events.reduce((total,event) => total + planning.names.filter((_,i) => planning.attendance[`${event.id}-${i}`] === "yes").length,0),[planning,events]);
+  const answeredCount=Object.keys(planning.attendance).length, totalAnswers=events.length*planning.names.length, completion=Math.round(answeredCount/totalAnswers*100);
+  const personLabel=(number:number) => lang === "he" ? `${number} ${number === 1 ? t.person : t.persons}` : `${number} ${number > 1 ? t.persons : t.person}`;
+  const fallback=(index:number) => `${t.personPlaceholder} ${index+1}`;
+  const setStatus=(eventId:string,index:number,status:Status) => { const key=`${eventId}-${index}`, attendance={...planning.attendance}; if (attendance[key]===status) delete attendance[key]; else attendance[key]=status; savePlanning({...planning,attendance}); };
+  const updateName=(index:number,name:string) => savePlanning({...planning,names:planning.names.map((item,i) => i===index?name:item)});
+  const updatePeople=(index:number,count:number) => savePlanning({...planning,people:planning.people.map((item,i) => i===index?Math.max(1,Math.min(4,count||1)):item)});
+  const updateMenu=(eventId:string,menu:string) => savePlanning({...planning,menus:{...planning.menus,[eventId]:menu}});
+  const whatsappMessage=encodeURIComponent(t.whatsapp+(typeof window === "undefined" ? "" : window.location.href));
 
-  useEffect(() => {
-    loadPlanning().catch(() => undefined).finally(() => setLoaded(true));
-    const timer = window.setInterval(() => loadPlanning().catch(() => undefined), 8000);
-    return () => window.clearInterval(timer);
-  }, [loadPlanning]);
-
-  const savePlanning = async (next: Planning) => {
-    setPlanning(next);
-    setSaving(true);
-    try {
-      await fetch("/api/planning", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next) });
-    } finally { setSaving(false); }
-  };
-
-  const comingCount = useMemo(() => events.reduce((total, event) => total + planning.names.filter((_, index) => planning.attendance[`${event.id}-${index}`] === "yes").length, 0), [planning]);
-  const answeredCount = Object.keys(planning.attendance).length;
-  const totalAnswers = events.length * planning.names.length;
-  const completion = Math.round((answeredCount / totalAnswers) * 100);
-  const whatsappMessage = encodeURIComponent("Coucou ! Petit rappel : peux-tu répondre au planning des fêtes ? 😊\n" + (typeof window === "undefined" ? "" : window.location.href));
-  const setStatus = (eventId: string, personIndex: number, status: Status) => {
-    const key = `${eventId}-${personIndex}`;
-    const attendance = { ...planning.attendance };
-    if (attendance[key] === status) delete attendance[key];
-    else attendance[key] = status;
-    savePlanning({ ...planning, attendance });
-  };
-  const updateName = (index: number, name: string) => savePlanning({ ...planning, names: planning.names.map((item, itemIndex) => itemIndex === index ? name : item) });
-  const updatePeople = (index: number, count: number) => savePlanning({ ...planning, people: planning.people.map((item, itemIndex) => itemIndex === index ? Math.max(1, Math.min(4, count || 1)) : item) });
-  const updateMenu = (eventId: string, menu: string) => savePlanning({ ...planning, menus: { ...planning.menus, [eventId]: menu } });
-
-  return <main>
-    <section className="hero"><div className="hero-spark one">✦</div><div className="hero-spark two">✧</div><div className="eyebrow">Tichri 5787 · 2026</div><h1>Qui vient aux fêtes ?</h1><p>Le planning familial partagé, pour se retrouver tous ensemble.</p><div className="hero-bottom"><div><div className="hero-note"><span>♥</span> {comingCount} présence{comingCount > 1 ? "s" : ""} · {saving ? "enregistrement…" : loaded ? "synchronisé" : "chargement…"}</div><a className="whatsapp" href={`https://wa.me/?text=${whatsappMessage}`} target="_blank" rel="noreferrer">↗ Rappeler sur WhatsApp</a></div><div className="progress"><span>{completion}% répondu</span><div><i style={{ width: `${completion}%` }} /></div></div></div></section>
-    <section className="names" aria-labelledby="names-title"><div><h2>La famille</h2><p>Écrivez les prénoms et le nombre de personnes de chaque famille.</p></div><div className="name-grid">{planning.names.map((name, index) => <div key={index} className="family-card"><label className="name-field"><span>{index + 1}</span><input aria-label={`Prénom de la personne ${index + 1}`} value={name} onChange={(event) => updateName(index, event.target.value)} /></label><label className="people-field"><span>Personnes</span><select aria-label={`Nombre de personnes pour ${name}`} value={Math.min(4, planning.people[index] ?? 1)} onChange={(event) => updatePeople(index, Number(event.target.value))}>{[1, 2, 3, 4].map((count) => <option key={count} value={count}>{count}</option>)}</select></label></div>)}</div></section>
-    <section className="summary" aria-labelledby="summary-title"><div><h2 id="summary-title">Récapitulatif</h2><p>Les réponses manquantes apparaissent ici.</p></div><div className="summary-table"><div className="summary-head"><span>Famille</span><span>Présent</span><span>Pas encore répondu</span></div>{planning.names.map((name, index) => { const count = events.filter((event) => planning.attendance[`${event.id}-${index}`] === "yes").length; const missing = events.filter((event) => !planning.attendance[`${event.id}-${index}`]).length; return <div className="summary-row" key={index}><span>{name.trim() || `Personne ${index + 1}`} <small>· {planning.people[index] ?? 1} personnes</small></span><strong>{count} / {events.length}</strong><em>{missing ? `${missing} en attente` : "Tout répondu"}</em></div>; })}</div></section>
-    <section className="planner" aria-labelledby="planner-title"><div className="section-title"><div><h2 id="planner-title">Le planning</h2><p>Chaque personne choisit sa réponse. Les changements sont visibles par tous.</p></div><span className="answer-count">{answeredCount} / {totalAnswers} réponses</span></div><div className="legend"><span><b className="yes">✓</b> Je viens</span><span><b className="maybe">?</b> Pas sûr</span><span><b className="no">–</b> Je ne viens pas</span></div><div className="event-list">{events.map((event) => { const confirmed = planning.names.reduce((total, _, index) => total + (planning.attendance[`${event.id}-${index}`] === "yes" ? planning.people[index] ?? 1 : 0), 0); const families = planning.names.filter((_, index) => planning.attendance[`${event.id}-${index}`] === "yes").length; return <article className="event" key={event.id}><header><div className="calendar"><strong>{event.date.split(" ")[0].slice(0, 3)}</strong><span>{event.date.match(/\d+/)?.[0]}</span></div><div><h3>{event.name}</h3><p>{event.date}</p></div><small>{confirmed} personne{confirmed > 1 ? "s" : ""} · {families} famille{families > 1 ? "s" : ""}</small></header><label className="menu-field"><span>🍽 Menu du repas</span><input value={planning.menus[event.id] ?? ""} placeholder="Écrire le menu…" aria-label={`Menu pour ${event.name}`} onChange={(input) => updateMenu(event.id, input.target.value)} /></label><div className="responses">{planning.names.map((name, personIndex) => { const current = planning.attendance[`${event.id}-${personIndex}`]; return <div className="response" key={personIndex}><span className="person-name">{name.trim() || `Personne ${personIndex + 1}`} · {planning.people[personIndex] ?? 1} pers.</span><div className="choices" aria-label={`Présence de ${name} pour ${event.name}`}>{statuses.map((status) => <button key={status.key} title={status.label} aria-label={status.label} className={`${status.key} ${current === status.key ? "selected" : ""}`} onClick={() => setStatus(event.id, personIndex, status.key)}>{status.icon}</button>)}</div></div>; })}</div></article>; })}</div></section>
-    <section className="meal-summary" aria-labelledby="meal-summary-title"><div><h2 id="meal-summary-title">Récapitulatif par repas</h2><p>Les familles qui ont confirmé leur présence.</p></div><div className="meal-summary-grid">{events.map((event) => { const guests = planning.names.flatMap((name, index) => planning.attendance[`${event.id}-${index}`] === "yes" ? [{ name: name.trim() || `Personne ${index + 1}`, people: planning.people[index] ?? 1 }] : []); const total = guests.reduce((sum, guest) => sum + guest.people, 0); return <article className="meal-summary-card" key={event.id}><div><h3>{event.name}</h3><p>{event.date}</p></div>{guests.length ? <><ul>{guests.map((guest) => <li key={guest.name}><span>{guest.name}</span><b>{guest.people} pers.</b></li>)}</ul><strong>{total} personne{total > 1 ? "s" : ""} au total</strong></> : <em>Pas encore de présence confirmée</em>}</article>; })}</div></section>
-    <p className="footnote">Les réponses sont partagées avec toutes les personnes qui ont le lien.</p>
+  return <main dir={lang === "he" ? "rtl" : "ltr"}>
+    <div className="language-switch" aria-label="Language"><button className={lang === "fr" ? "active" : ""} onClick={() => changeLanguage("fr")}>FR</button><button className={lang === "he" ? "active" : ""} onClick={() => changeLanguage("he")}>עברית</button></div>
+    <section className="hero"><div className="hero-spark one">✦</div><div className="hero-spark two">✧</div><div className="eyebrow">{t.eyebrow}</div><h1>{t.title}</h1><p>{t.subtitle}</p><div className="hero-bottom"><div><div className="hero-note"><span>♥</span> {comingCount} {t.presence} · {saving?t.saving:loaded?t.sync:t.loading}</div><a className="whatsapp" href={`https://wa.me/?text=${whatsappMessage}`} target="_blank" rel="noreferrer">{t.reminder}</a></div><div className="progress"><span>{completion}% {t.progress}</span><div><i style={{width:`${completion}%`}} /></div></div></div></section>
+    <section className="names" aria-labelledby="names-title"><div><h2 id="names-title">{t.family}</h2><p>{t.familyHint}</p></div><div className="name-grid">{planning.names.map((name,index) => <div key={index} className="family-card"><label className="name-field"><span>{index+1}</span><input aria-label={`${t.personPlaceholder} ${index+1}`} value={name} onChange={e => updateName(index,e.target.value)} /></label><label className="people-field"><span>{t.people}</span><select aria-label={`${t.people} ${name}`} value={Math.min(4,planning.people[index]??1)} onChange={e => updatePeople(index,Number(e.target.value))}>{[1,2,3,4].map(count => <option key={count} value={count}>{count}</option>)}</select></label></div>)}</div></section>
+    <section className="summary" aria-labelledby="summary-title"><div><h2 id="summary-title">{t.summary}</h2><p>{t.summaryHint}</p></div><div className="summary-table"><div className="summary-head"><span>{t.familyHead}</span><span>{t.coming}</span><span>{t.waiting}</span></div>{planning.names.map((name,index) => { const count=events.filter(event => planning.attendance[`${event.id}-${index}`] === "yes").length, missing=events.filter(event => !planning.attendance[`${event.id}-${index}`]).length; return <div className="summary-row" key={index}><span>{name.trim()||fallback(index)} <small>· {personLabel(planning.people[index]??1)}</small></span><strong>{count} / {events.length}</strong><em>{missing?`${missing} ${t.pending}`:t.all}</em></div>; })}</div></section>
+    <section className="planner" aria-labelledby="planner-title"><div className="section-title"><div><h2 id="planner-title">{t.planning}</h2><p>{t.planningHint}</p></div><span className="answer-count">{answeredCount} / {totalAnswers} {t.answers}</span></div><div className="legend">{statuses.map(status => <span key={status.key}><b className={status.key}>{status.icon}</b> {status.label}</span>)}</div><div className="event-list">{events.map(event => { const confirmed=planning.names.reduce((total,_,index) => total+(planning.attendance[`${event.id}-${index}`]==="yes"?planning.people[index]??1:0),0), families=planning.names.filter((_,index) => planning.attendance[`${event.id}-${index}`]==="yes").length; return <article className="event" key={event.id}><header><div className="calendar"><strong>{event.date.split(" ")[0].slice(0,3)}</strong><span>{event.date.match(/\d+/)?.[0]}</span></div><div><h3>{event.name}</h3><p>{event.date}</p></div><small>{personLabel(confirmed)} · {families} {t.families}</small></header><label className="menu-field"><span>{t.menu}</span><input value={planning.menus[event.id]??""} placeholder={t.menuPlaceholder} aria-label={`${t.menu} ${event.name}`} onChange={input => updateMenu(event.id,input.target.value)} /></label><div className="responses">{planning.names.map((name,index) => { const current=planning.attendance[`${event.id}-${index}`]; return <div className="response" key={index}><span className="person-name">{name.trim()||fallback(index)} · {personLabel(planning.people[index]??1)}</span><div className="choices" aria-label={`${name} ${event.name}`}>{statuses.map(status => <button key={status.key} title={status.label} aria-label={status.label} className={`${status.key} ${current===status.key?"selected":""}`} onClick={() => setStatus(event.id,index,status.key)}>{status.icon}</button>)}</div></div>; })}</div></article>; })}</div></section>
+    <section className="meal-summary" aria-labelledby="meal-summary-title"><div><h2 id="meal-summary-title">{t.mealSummary}</h2><p>{t.mealSummaryHint}</p></div><div className="meal-summary-grid">{events.map(event => { const guests=planning.names.flatMap((name,index) => planning.attendance[`${event.id}-${index}`]==="yes"?[{name:name.trim()||fallback(index),people:planning.people[index]??1}]:[]), total=guests.reduce((sum,guest) => sum+guest.people,0); return <article className="meal-summary-card" key={event.id}><div><h3>{event.name}</h3><p>{event.date}</p></div>{guests.length?<><ul>{guests.map(guest => <li key={guest.name}><span>{guest.name}</span><b>{personLabel(guest.people)}</b></li>)}</ul><strong>{personLabel(total)} {t.total}</strong></>:<em>{t.noGuests}</em>}</article>; })}</div></section>
+    <p className="footnote">{t.shared}</p>
   </main>;
 }
