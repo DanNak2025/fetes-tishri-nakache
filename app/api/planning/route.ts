@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     ? data.names.map((name) => String(name).trim().slice(0, 40) || "Personne")
     : defaultNames;
   const attendance = Object.fromEntries(Object.entries((data.attendance ?? {}) as Record<string, unknown>)
-    .filter(([key, value]) => /^[a-z0-9]+-[0-4]$/.test(key) && typeof value === "string" && validStatuses.has(value)));
+    .filter(([key, value]) => /^[a-z0-9-]+-[0-4]$/.test(key) && typeof value === "string" && validStatuses.has(value)));
   const now = new Date();
   const db = getDb();
   await db.insert(plannerState).values({ id: 1, names: JSON.stringify(names), attendance: JSON.stringify(attendance), updatedAt: now })

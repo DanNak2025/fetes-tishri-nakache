@@ -6,11 +6,16 @@ type Status = "yes" | "no" | "maybe";
 type Planning = { names: string[]; attendance: Record<string, Status> };
 
 const events = [
-  { id: "rh1", name: "Roch Hachana · 1er jour", date: "Samedi 12 septembre 2026" },
-  { id: "rh2", name: "Roch Hachana · 2e jour", date: "Dimanche 13 septembre 2026" },
-  { id: "kippour", name: "Kippour", date: "Lundi 21 septembre 2026" },
-  { id: "sukkot", name: "Sukkot", date: "Samedi 26 septembre 2026" },
-  { id: "simhat", name: "2e fête · Sim'hat Torah", date: "Dimanche 4 octobre 2026" },
+  { id: "rh-vendredi", name: "Roch Hachana · Vendredi soir", date: "Vendredi 11 septembre 2026" },
+  { id: "rh-samedi-midi", name: "Roch Hachana · Samedi après-midi", date: "Samedi 12 septembre 2026" },
+  { id: "rh-samedi-soir", name: "Roch Hachana · Samedi soir", date: "Samedi 12 septembre 2026" },
+  { id: "rh-dimanche", name: "Roch Hachana · Dimanche après-midi", date: "Dimanche 13 septembre 2026" },
+  { id: "kippour-veille", name: "Kippour · Dimanche soir", date: "Dimanche 20 septembre 2026" },
+  { id: "kippour-fin", name: "Kippour · Casser le jeûne", date: "Lundi 21 septembre 2026 · soir" },
+  { id: "sukkot-vendredi", name: "Souccot · Vendredi soir", date: "Vendredi 25 septembre 2026" },
+  { id: "sukkot-samedi", name: "Souccot · Samedi après-midi", date: "Samedi 26 septembre 2026" },
+  { id: "simha-vendredi", name: "Simha Torah", date: "Vendredi 2 octobre 2026" },
+  { id: "simha-samedi", name: "Simha Torah", date: "Samedi 3 octobre 2026" },
 ];
 const defaultPlanning: Planning = { names: ["Personne 1", "Personne 2", "Personne 3", "Personne 4", "Personne 5"], attendance: {} };
 const statuses: { key: Status; label: string; icon: string }[] = [
