@@ -1,0 +1,46 @@
+/* Téléphone d'abord : textes et zones tactiles confortables */
+@media (max-width:700px) {
+  main { padding-bottom:58px; }
+  .hero { min-height:310px; }
+  .hero h1 { max-width:260px; font-size:42px; }
+  .hero p { max-width:290px; font-size:16px; }
+  .whatsapp { width:100%; margin-top:12px; padding:13px 16px; border-radius:13px; text-align:center; font-size:13px; }
+  .hero-note { padding:10px 12px; font-size:12px; }
+  .names,.summary,.planner,.meal-summary { margin-top:15px; box-shadow:0 6px 20px rgba(45,42,35,.06); }
+  .name-grid { gap:12px; }
+  .name-field input { min-height:42px; font-size:15px; }
+  .name-field span { width:32px; }
+  .people-field { min-height:37px; }
+  .people-field select { min-height:37px; font-size:15px; }
+  .summary-table { border-radius:12px; }
+  .summary-row { gap:8px; padding:13px 11px; }
+  .summary-row strong { min-width:64px; padding:7px 9px; font-size:14px; }
+  .event { border-radius:15px; }
+  .event header { align-items:flex-start; flex-wrap:wrap; gap:10px; padding:14px; }
+  .event header h3 { font-size:16px; line-height:1.25; }
+  .event header p { font-size:12px; }
+  .event header small { width:100%; margin:0; padding:7px 9px; text-align:center; }
+  .calendar { flex:0 0 44px; }
+  .menu-field { align-items:flex-start; flex-direction:column; gap:3px; padding:11px 14px; }
+  .menu-field span { font-size:12px; }
+  .menu-field input { min-height:34px; padding:6px 0; font-size:15px; }
+  .response { min-height:58px; padding:9px 13px; }
+  .person-name { max-width:calc(100% - 116px); font-size:13px; }
+  .choices { gap:8px; }
+  .choices button { width:36px; height:36px; font-size:15px; }
+  .meal-summary-card { min-height:132px; padding:15px; }
+  .meal-summary-card li { font-size:14px; }
+}
+
+@media (max-width:380px) {
+  .hero { padding:25px 19px; }
+  .hero h1 { font-size:37px; }
+  .name-grid { grid-template-columns:1fr; }
+  .language-switch { right:20px; }
+  main[dir="rtl"] .language-switch { right:auto; left:20px; }
+}
+
+@media (hover:none) {
+  .event:hover { transform:none; box-shadow:none; }
+  .choices button:hover { transform:none; box-shadow:none; }
+}
