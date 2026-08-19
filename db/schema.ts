@@ -4,6 +4,7 @@ export const plannerState = sqliteTable("planner_state", {
   id: integer("id").primaryKey(),
   names: text("names").notNull(),
   people: text("people").notNull().default("[1,1,1,1,1]"),
+  menus: text("menus").notNull().default("{}"),
   attendance: text("attendance").notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
