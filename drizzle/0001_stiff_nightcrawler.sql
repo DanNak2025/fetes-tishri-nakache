@@ -1,0 +1,1 @@
+ALTER TABLE `planner_state` ADD `people` text DEFAULT '[1,1,1,1,1]' NOT NULL;

@@ -5,3 +5,5 @@ dist/
 .env
 .env.local
 .DS_Store
+app/page 2.tsx
+db/schema 2.ts
