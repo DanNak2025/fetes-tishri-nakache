@@ -1,0 +1,1 @@
+ALTER TABLE `planner_state` ADD `finished` text DEFAULT '[]' NOT NULL;

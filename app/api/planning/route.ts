@@ -6,18 +6,18 @@ const defaultNames = ["Personne 1", "Personne 2", "Personne 3", "Personne 4", "P
 const validStatuses = new Set(["yes", "maybe", "no"]);
 
 function defaultPlanning() {
-  return { names: defaultNames, people: [1, 1, 1, 1, 1], menus: {} as Record<string, string>, attendance: {} as Record<string, "yes" | "maybe" | "no"> };
+  return { names: defaultNames, people: [1, 1, 1, 1, 1], menus: {} as Record<string, string>, attendance: {} as Record<string, "yes" | "maybe" | "no">, finished: [] as number[] };
 }
 
 export async function GET() {
   const db = getDb();
   const [row] = await db.select().from(plannerState).where(eq(plannerState.id, 1)).limit(1);
   if (!row) return Response.json(defaultPlanning());
-  return Response.json({ names: JSON.parse(row.names), people: JSON.parse(row.people), menus: JSON.parse(row.menus), attendance: JSON.parse(row.attendance) });
+  return Response.json({ names: JSON.parse(row.names), people: JSON.parse(row.people), menus: JSON.parse(row.menus), attendance: JSON.parse(row.attendance), finished: JSON.parse(row.finished) });
 }
 
 export async function POST(request: Request) {
-  const data = await request.json() as { names?: unknown; people?: unknown; menus?: unknown; attendance?: unknown };
+  const data = await request.json() as { names?: unknown; people?: unknown; menus?: unknown; attendance?: unknown; finished?: unknown };
   const names = Array.isArray(data.names) && data.names.length === 5
     ? data.names.map((name) => String(name).trim().slice(0, 40) || "Personne")
     : defaultNames;
@@ -29,9 +29,10 @@ export async function POST(request: Request) {
   const menus = Object.fromEntries(Object.entries((data.menus ?? {}) as Record<string, unknown>)
     .filter(([key, value]) => /^[a-z0-9-]+$/.test(key) && typeof value === "string" && value.trim())
     .map(([key, value]) => [key, String(value).trim().slice(0, 500)]));
+  const finished = Array.isArray(data.finished) ? [...new Set(data.finished.filter((index): index is number => Number.isInteger(index) && index >= 0 && index < 5))] : [];
   const now = new Date();
   const db = getDb();
-  await db.insert(plannerState).values({ id: 1, names: JSON.stringify(names), people: JSON.stringify(people), menus: JSON.stringify(menus), attendance: JSON.stringify(attendance), updatedAt: now })
-    .onConflictDoUpdate({ target: plannerState.id, set: { names: JSON.stringify(names), people: JSON.stringify(people), menus: JSON.stringify(menus), attendance: JSON.stringify(attendance), updatedAt: now } });
-  return Response.json({ names, people, menus, attendance });
+  await db.insert(plannerState).values({ id: 1, names: JSON.stringify(names), people: JSON.stringify(people), menus: JSON.stringify(menus), attendance: JSON.stringify(attendance), finished: JSON.stringify(finished), updatedAt: now })
+    .onConflictDoUpdate({ target: plannerState.id, set: { names: JSON.stringify(names), people: JSON.stringify(people), menus: JSON.stringify(menus), attendance: JSON.stringify(attendance), finished: JSON.stringify(finished), updatedAt: now } });
+  return Response.json({ names, people, menus, attendance, finished });
 }

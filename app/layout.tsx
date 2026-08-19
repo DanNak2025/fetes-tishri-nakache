@@ -3,6 +3,7 @@ import "./globals.css";
 import "./dynamic.css";
 import "./mobile.css";
 import "./navigation.css";
+import "./actions.css";
 
 export const metadata: Metadata = {
   title: "Planning des fêtes · 2026",

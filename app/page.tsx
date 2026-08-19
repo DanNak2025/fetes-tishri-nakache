@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Status = "yes" | "no" | "maybe";
 type Lang = "fr" | "he";
-type Planning = { names: string[]; people: number[]; menus: Record<string, string>; attendance: Record<string, Status> };
+type Planning = { names: string[]; people: number[]; menus: Record<string, string>; attendance: Record<string, Status>; finished: number[] };
 
 const eventIds = ["rh-vendredi", "rh-samedi-midi", "rh-samedi-soir", "rh-dimanche", "kippour-veille", "kippour-fin", "sukkot-vendredi", "sukkot-samedi", "simha-vendredi", "simha-samedi"];
+const eventDates = ["2026-09-11", "2026-09-12", "2026-09-12", "2026-09-13", "2026-09-20", "2026-09-21", "2026-09-25", "2026-09-26", "2026-10-02", "2026-10-03"];
+const extraCopy = { fr:{ next:"Prochain repas", today:"aujourd’hui", in:"dans", days:"jours", waiting:"n’ont pas encore répondu", allAnswered:"Tout le monde a répondu", doneTitle:"Réponses terminées", doneHint:"Appuyez sur votre prénom quand votre famille a fini.", finish:"J’ai fini", finished:"Terminé" }, he:{ next:"הארוחה הבאה", today:"היום", in:"בעוד", days:"ימים", waiting:"טרם ענו", allAnswered:"כולם ענו", doneTitle:"סיום מענה", doneHint:"לחצו על שמכם כשסיימתם לענות.", finish:"סיימתי", finished:"הסתיים" } } as const;
 const eventCopy = {
   fr: [
     ["Roch Hachana · Vendredi soir", "Vendredi 11 septembre 2026"], ["Roch Hachana · Samedi après-midi", "Samedi 12 septembre 2026"], ["Roch Hachana · Samedi soir", "Samedi 12 septembre 2026"], ["Roch Hachana · Dimanche après-midi", "Dimanche 13 septembre 2026"], ["Kippour · Dimanche soir", "Dimanche 20 septembre 2026"], ["Kippour · Casser le jeûne", "Lundi 21 septembre 2026 · soir"], ["Souccot · Vendredi soir", "Vendredi 25 septembre 2026"], ["Souccot · Samedi après-midi", "Samedi 26 septembre 2026"], ["Simha Torah", "Vendredi 2 octobre 2026"], ["Simha Torah", "Samedi 3 octobre 2026"],
@@ -19,7 +21,7 @@ const text = {
   fr: { eyebrow:"Tichri 5787 · 2026", title:"Qui vient aux fêtes ?", subtitle:"Le planning familial partagé, pour se retrouver tous ensemble.", presence:"présence", sync:"synchronisé", loading:"chargement…", saving:"enregistrement…", reminder:"↗ Rappeler sur WhatsApp", progress:"répondu", family:"La famille", familyHint:"Écrivez les prénoms et le nombre de personnes de chaque famille.", people:"Personnes", summary:"Récapitulatif", summaryHint:"Les réponses manquantes apparaissent ici.", familyHead:"Famille", coming:"Présent", waiting:"Pas encore répondu", pending:"en attente", all:"Tout répondu", planning:"Le planning", planningHint:"Chaque personne choisit sa réponse. Les changements sont visibles par tous.", answers:"réponses", yes:"Je viens", maybe:"Pas sûr", no:"Je ne viens pas", menu:"🍽 Menu du repas", menuPlaceholder:"Écrire le menu…", person:"personne", persons:"personnes", families:"famille", mealSummary:"Récapitulatif par repas", mealSummaryHint:"Les familles qui ont confirmé leur présence.", noGuests:"Pas encore de présence confirmée", total:"au total", shared:"Les réponses sont partagées avec toutes les personnes qui ont le lien.", personPlaceholder:"Personne", whatsapp:"Coucou ! Petit rappel : peux-tu répondre au planning des fêtes ? 😊\n" },
   he: { eyebrow:"תשרי תשפ״ז · 2026", title:"מי מגיע לחגים?", subtitle:"לוח משפחתי משותף, כדי שנוכל להיפגש כולנו יחד.", presence:"הגעות", sync:"מסונכרן", loading:"טוען…", saving:"שומר…", reminder:"↗ תזכורת ב-WhatsApp", progress:"ענו", family:"המשפחה", familyHint:"כתבו את השמות ואת מספר האנשים בכל משפחה.", people:"אנשים", summary:"סיכום", summaryHint:"התשובות החסרות מופיעות כאן.", familyHead:"משפחה", coming:"מגיעים", waiting:"טרם ענו", pending:"ממתינים", all:"הכל נענה", planning:"הלוח", planningHint:"כל אחד בוחר תשובה. השינויים גלויים לכולם.", answers:"תשובות", yes:"אני מגיע/ה", maybe:"לא בטוח/ה", no:"לא מגיע/ה", menu:"🍽 תפריט הארוחה", menuPlaceholder:"לכתוב את התפריט…", person:"אדם", persons:"אנשים", families:"משפחות", mealSummary:"סיכום לפי ארוחה", mealSummaryHint:"המשפחות שאישרו את הגעתן.", noGuests:"עדיין אין הגעה מאושרת", total:"בסך הכול", shared:"התשובות משותפות לכל מי שיש לו את הקישור.", personPlaceholder:"אדם", whatsapp:"היי! תזכורת קטנה: אפשר לענות על לוח החגים? 😊\n" },
 } as const;
-const defaultPlanning: Planning = { names:["Personne 1","Personne 2","Personne 3","Personne 4","Personne 5"], people:[1,1,1,1,1], menus:{}, attendance:{} };
+const defaultPlanning: Planning = { names:["Personne 1","Personne 2","Personne 3","Personne 4","Personne 5"], people:[1,1,1,1,1], menus:{}, attendance:{}, finished:[] };
 
 export default function Home() {
   const [planning, setPlanning] = useState<Planning>(defaultPlanning);
@@ -27,6 +29,7 @@ export default function Home() {
   const [saving, setSaving] = useState(false);
   const [lang, setLang] = useState<Lang>("fr");
   const t = text[lang];
+  const x = extraCopy[lang];
   const events = eventIds.map((id, index) => ({ id, name:eventCopy[lang][index][0], date:eventCopy[lang][index][1] }));
   const statuses: { key: Status; label: string; icon: string }[] = [{key:"yes",label:t.yes,icon:"✓"},{key:"maybe",label:t.maybe,icon:"?"},{key:"no",label:t.no,icon:"–"}];
 
@@ -42,6 +45,10 @@ export default function Home() {
   const updateName=(index:number,name:string) => savePlanning({...planning,names:planning.names.map((item,i) => i===index?name:item)});
   const updatePeople=(index:number,count:number) => savePlanning({...planning,people:planning.people.map((item,i) => i===index?Math.max(1,Math.min(4,count||1)):item)});
   const updateMenu=(eventId:string,menu:string) => savePlanning({...planning,menus:{...planning.menus,[eventId]:menu}});
+  const toggleFinished=(index:number) => savePlanning({...planning,finished:planning.finished.includes(index)?planning.finished.filter(item => item !== index):[...planning.finished,index]});
+  const nextIndex=eventDates.findIndex(date => new Date(`${date}T23:59:59`).getTime() >= Date.now());
+  const daysUntil=nextIndex < 0 ? 0 : Math.max(0,Math.ceil((new Date(`${eventDates[nextIndex]}T12:00:00`).getTime()-Date.now())/86400000));
+  const waitingNames=nextIndex < 0 ? [] : planning.names.filter((_,index) => !planning.attendance[`${eventIds[nextIndex]}-${index}`]).map((name,index) => name.trim() || fallback(index));
   const whatsappMessage=encodeURIComponent(t.whatsapp+(typeof window === "undefined" ? "" : window.location.href));
 
   return <main dir={lang === "he" ? "rtl" : "ltr"}>
@@ -52,6 +59,10 @@ export default function Home() {
       <button onClick={() => document.querySelector(".meal-summary")?.scrollIntoView({ behavior:"smooth", block:"start" })}><b>✦</b>{t.mealSummary}</button>
     </nav>
     <div className="language-switch" aria-label="Language"><button className={lang === "fr" ? "active" : ""} onClick={() => changeLanguage("fr")}>FR</button><button className={lang === "he" ? "active" : ""} onClick={() => changeLanguage("he")}>עברית</button></div>
+    <section className="action-center">
+      {nextIndex >= 0 && <article className="next-alert"><span>⏰</span><div><b>{x.next} · {events[nextIndex].name}</b><p>{daysUntil === 0 ? x.today : `${x.in} ${daysUntil} ${x.days}`} · {waitingNames.length ? `${waitingNames.join(", ")} ${x.waiting}` : x.allAnswered}</p></div></article>}
+      <article className="finish-card"><div><h2>{x.doneTitle}</h2><p>{x.doneHint}</p></div><div className="finish-buttons">{planning.names.map((name,index) => <button key={index} className={planning.finished.includes(index) ? "finished" : ""} onClick={() => toggleFinished(index)}>{planning.finished.includes(index) ? "✓ " : ""}{name.trim() || fallback(index)}<small>{planning.finished.includes(index) ? x.finished : x.finish}</small></button>)}</div></article>
+    </section>
     <section className="hero"><div className="hero-orb orb-one" aria-hidden="true" /><div className="hero-orb orb-two" aria-hidden="true" /><div className="hero-spark one">✦</div><div className="hero-spark two">✧</div><div className="eyebrow">{t.eyebrow}</div><h1>{t.title}</h1><p>{t.subtitle}</p><div className="hero-bottom"><div><div className="hero-note"><i className="live-dot" /> <span>♥</span> {comingCount} {t.presence} · {saving?t.saving:loaded?t.sync:t.loading}</div><a className="whatsapp" href={`https://wa.me/?text=${whatsappMessage}`} target="_blank" rel="noreferrer">{t.reminder}</a></div><div className="progress"><span>{completion}% {t.progress}</span><div><i style={{width:`${completion}%`}} /></div></div></div></section>
     <section className="names" aria-labelledby="names-title"><div><h2 id="names-title">{t.family}</h2><p>{t.familyHint}</p></div><div className="name-grid">{planning.names.map((name,index) => <div key={index} className="family-card"><label className="name-field"><span>{index+1}</span><input aria-label={`${t.personPlaceholder} ${index+1}`} value={name} onChange={e => updateName(index,e.target.value)} /></label><label className="people-field"><span>{t.people}</span><select aria-label={`${t.people} ${name}`} value={Math.min(4,planning.people[index]??1)} onChange={e => updatePeople(index,Number(e.target.value))}>{[1,2,3,4].map(count => <option key={count} value={count}>{count}</option>)}</select></label></div>)}</div></section>
     <section className="summary" aria-labelledby="summary-title"><div><h2 id="summary-title">{t.summary}</h2><p>{t.summaryHint}</p></div><div className="summary-table"><div className="summary-head"><span>{t.familyHead}</span><span>{t.coming}</span><span>{t.waiting}</span></div>{planning.names.map((name,index) => { const count=events.filter(event => planning.attendance[`${event.id}-${index}`] === "yes").length, missing=events.filter(event => !planning.attendance[`${event.id}-${index}`]).length; return <div className="summary-row" key={index}><span>{name.trim()||fallback(index)} <small>· {personLabel(planning.people[index]??1)}</small></span><strong>{count} / {events.length}</strong><em>{missing?`${missing} ${t.pending}`:t.all}</em></div>; })}</div></section>

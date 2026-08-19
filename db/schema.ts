@@ -6,5 +6,6 @@ export const plannerState = sqliteTable("planner_state", {
   people: text("people").notNull().default("[1,1,1,1,1]"),
   menus: text("menus").notNull().default("{}"),
   attendance: text("attendance").notNull(),
+  finished: text("finished").notNull().default("[]"),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
